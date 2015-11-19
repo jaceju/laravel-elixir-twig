@@ -1,26 +1,39 @@
 'use strict';
 
 var gulp = require('gulp');
-var elixir = require('laravel-elixir');
+var Elixir = require('laravel-elixir');
 var _ = require('underscore');
 var twig = require('gulp-twig');
 
-elixir.extend('twig', function (options) {
+Elixir.extend('twig', function(src, output, options) {
+    new Elixir.Task('twig', function() {
+        var paths = prepGulpPaths(src, output);
 
-    var src, opts;
+        this.log(paths.src, paths.output);
 
-    options = _.extend({
-        src: 'resources/views/**/*.twig',
-        data: {}
-    }, options);
+        options = _.extend({
+            data: {}
+        }, options);
 
-    src = options.src;
-
-    gulp.task('twig', function () {
-        return gulp.src(src)
-            .pipe(twig(options))
-            .pipe(gulp.dest('public'));
-    });
-
-    return this.queueTask('twig');
+        return (
+            gulp.src(paths.src.path)
+                .pipe(twig(options))
+                .pipe(gulp.dest(paths.output.baseDir))
+                .pipe(new Elixir.Notification('Twig Compiled!'))
+        );
+    })
+    .watch('resources/views/**/*.twig');
 });
+
+/**
+ * Prep the Gulp src and output paths.
+ *
+ * @param  {string|array} src
+ * @param  {string|null}  output
+ * @return {object}
+ */
+var prepGulpPaths = function(src, output) {
+    return new Elixir.GulpPaths()
+        .src(src || '*.twig', 'resources/views')
+        .output(output || 'public');
+};
